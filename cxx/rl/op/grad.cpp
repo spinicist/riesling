@@ -22,12 +22,12 @@ inline void ForwardDiff(T1 const &a, T2 &&b, Sz<N> const shape, Index const dim,
   sz[dim] -= 1;
   sz1[dim] = 1;
   if constexpr (fwd) {
-    Log::Debug("Grad", "Forward forward differences dim {}", dim, dim);
+    Log::Debug("Grad", "Forward forward differences dim {}", dim);
     b.slice(f0, sz).device(Threads::TensorDevice()) += (a.slice(fp1, sz) - a.slice(f0, sz)) * b.slice(f0, sz).constant(s / 2.f);
     b.slice(fm1, sz1).device(Threads::TensorDevice()) +=
       (a.slice(f0, sz1) - a.slice(fm1, sz1)) * b.slice(fm1, sz1).constant(s / 2.f);
   } else {
-    Log::Debug("Grad", "Adjoint forward differences dim {}", dim, dim);
+    Log::Debug("Grad", "Adjoint forward differences dim {}", dim);
     b.slice(fp1, sz).device(Threads::TensorDevice()) +=
       (a.slice(f0, sz) - a.slice(fp1, sz)) * b.slice(f0, sz).constant(s / 2.f);
     b.slice(f0, sz1).device(Threads::TensorDevice()) +=
@@ -62,6 +62,9 @@ template <int ND, int NG> Grad<ND, NG>::Grad(InDims const ish, Sz<NG> const d)
   : Parent("Grad", ish, AddBack(ish, (Index)d.size()))
   , dims_{d}
 {
+  for (Index const dd : dims_) {
+  	if (ish[dd] < 2) { throw Log::Failure("Grad", "Dim {} of shape {} was less than 2", dd, ish); }
+  }
 }
 
 template <int ND, int NG> auto Grad<ND, NG>::Make(InDims const ish, Sz<NG> const d) -> std::shared_ptr<Grad>

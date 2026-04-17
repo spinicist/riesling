@@ -19,6 +19,7 @@ struct RegOpts
   args::ValueFlag<float> tv;
   args::ValueFlag<float> tv2;
   args::ValueFlag<float> tgv;
+  args::ValueFlag<float> tvb;
   args::ValueFlag<float> tvt;
 
   args::ValueFlag<float> llr;

@@ -20,6 +20,7 @@ RegOpts::RegOpts(args::Subparser &parser)
   , tv(parser, "TV", "Total Variation", {"tv"})
   , tv2(parser, "TV", "TV + Laplacian", {"tv2"})
   , tgv(parser, "TGV", "Total Generalized Variation", {"tgv"})
+  , tvb(parser, "TVB", "Total Variation along basis dimension", {"tvb"})
   , tvt(parser, "TVT", "Total Variation along time dimension", {"tvt"})
 
   , llr(parser, "L", "LLR regularization", {"llr"})
@@ -125,6 +126,12 @@ auto Regularizers(RegOpts &opts, TOps::TOp<5, 5>::Ptr const &recon) -> Regulariz
     }
     auto prox = Proxs::Stack::Make({pg, pl});
     regs.push_back({both, prox, grad->oshape});
+  }
+
+  if (opts.tvb) {
+    auto grad = TOps::Grad<5, 1>::Make(shape, Sz1{3});
+    auto prox = Proxs::L1::Make(opts.tvb.Get(), grad->rows());
+    regs.push_back({grad, prox, grad->oshape});
   }
 
   if (opts.tvt) {
