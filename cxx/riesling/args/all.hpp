@@ -2,7 +2,6 @@
 
 #include "args.hpp"
 
-#include "rl/algo/admm.hpp"
 #include "rl/algo/lsmr.hpp"
 #include "rl/algo/pdhg.hpp"
 #include "rl/op/grid-opts.hpp"

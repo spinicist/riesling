@@ -16,17 +16,19 @@ struct ADMM
 
   struct Opts
   {
-    Index iters0 = 16;    // Number of inner iterations on first outer iteration
+    Index iters0 = 16;   // Number of inner iterations on first outer iteration
     Index iters1 = 8;    // Number of inner iterations on subsequent outer iterations
     float aTol = 1.e-6f; // LSMR tolerance parameters
     float bTol = 1.e-6f;
     float cTol = 1.e-6f;
 
+    float ε = 1.e-3f;      // Convergence criteria
     Index outerLimit = 64; // Number of outer iterations
-    float ε = 1.e-3f;      // Primal tolerance parameter
-    float ρ = 1;           // Initial penalty parameter
-    Index T = 5;           // Update ρ every T iterations
-    float τ = 10.f;        // Fallback ρ update
+    Index restart = 8;     // Restart average every N iterations
+
+    float ρ = 1;    // Initial penalty parameter
+    bool  updateρ;  // Update ρ when average restarts
+    float τ = 10.f; // Fallback ρ update
   };
 
   ADMM(Op::Ptr A, Op::Ptr Minv, std::vector<Regularizer> const &regs, Opts opts, DebugX dx = nullptr, DebugZ dz = nullptr);
@@ -42,13 +44,13 @@ private:
   DebugZ                   debug_z = nullptr;
   Op::Ptr                  Aʹ, Minvʹ;
 
-	Vector mutable           bʹ;
+  Vector mutable x, x_k, x̅, bʹ;
   std::vector<float> mutable ρ;
   std::vector<Ops::DiagScale::Ptr> mutable ρops;
   std::vector<Vector> mutable z, y;
 
   // Helper function
-  void x_update(Index const, Vector const&, Vector &) const;
+  auto x_update(Index const) const -> bool;
   void zy_update(Index const, Index const, Vector const &) const;
 };
 

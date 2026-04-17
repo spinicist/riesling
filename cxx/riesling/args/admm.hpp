@@ -12,11 +12,12 @@ struct ADMMArgs
   args::ValueFlag<float> btol;
   args::ValueFlag<float> ctol;
 
-  args::ValueFlag<Index> out_its;
-
   args::ValueFlag<float> ε;
+  args::ValueFlag<Index> outerIts;
+  args::ValueFlag<Index> restart;
+
   args::ValueFlag<float> ρ;
-  args::ValueFlag<Index> T;
+  args::Flag             updateρ;
   args::ValueFlag<float> τ;
 
   ADMMArgs(args::Subparser &parser);

@@ -23,6 +23,10 @@ ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o,
 {
   Index const R = regs.size();
   Index       totalRows = 0;
+
+  x.resize(A->cols());
+  x_k.resize(A->cols());
+  x̅.resize(A->cols());
   for (Index ir = 0; ir < R; ir++) {
     Index const sz = regs[ir].T ? regs[ir].T->rows() : A->cols();
     z[ir].resize(sz);
@@ -39,18 +43,18 @@ ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o,
   bʹ.setZero();
 }
 
-void ADMM::x_update(Index const io, Vector const& x_k, Vector& x) const
+auto ADMM::x_update(Index const io) const -> bool
 {
   /* See https://web.stanford.edu/~boyd/papers/admm/lasso/lasso_lsqr.html
    * The x-update solves an augmented Least-Squares problem.
    * We are now using the unscaled version of ADMM (variables x, z, y)
-	 *  A'x = b'
-	 *	A'  =  [     A    b' = [     b
-	 *	       √ρ F_i          √ρ (z_i - y_i/ρ)
-	 *	          ...              ...
-	 *	       √ρ F_n ]        √ρ (z_n - y_n/ρ) ]
-	 * This has normal equations (for one regularizer):
-	 * (A'tA + ρFtF) x = (A'tb + ρFt(z - y/ρ))
+   *  A'x = b'
+   *	A'  =  [     A    b' = [     b
+   *	       √ρ F_i          √ρ (z_i - y_i/ρ)
+   *	          ...              ...
+   *	       √ρ F_n ]        √ρ (z_n - y_n/ρ) ]
+   * This has normal equations (for one regularizer):
+   * (A'tA + ρFtF) x = (A'tb + ρFt(z - y/ρ))
    */
 
   auto const dev = Threads::CoreDevice();
@@ -58,56 +62,73 @@ void ADMM::x_update(Index const io, Vector const& x_k, Vector& x) const
 
   Index start = A->rows();
   for (Index ir = 0; ir < regs.size(); ir++) {
-    bʹ.segment(start, z[ir].rows()).device(dev) = std::sqrt(ρ[ir]) * (z[ir] - y[ir]/ρ[ir]);
+    bʹ.segment(start, z[ir].rows()).device(dev) = std::sqrt(ρ[ir]) * (z[ir] - y[ir] / ρ[ir]);
     start += z[ir].rows();
     ρops[ir]->scale = std::sqrt(ρ[ir]);
   }
   x = lsmr.run(bʹ, x_k);
-  if (debug_x) { debug_x(io, x); }
+  Index const ii = io % opts.restart;
+  x_k.device(dev) = (x - x̅) / (ii + 2); /* Running average formula. Re-use space to store delta */
+  float const nΔ = ParallelNorm(x_k);
+  x̅.device(dev) = x̅ + x_k;
+  float const nx = ParallelNorm(x̅);
+  if (debug_x) { debug_x(io, x̅); }
+  Log::Print("ADMM", "{} |Δ| {:3.2E} |x| {:3.2E} |Δ|/|x| {:3.2E}", io, nΔ, nx, nΔ / nx);
+  if ((nΔ / nx) < opts.ε) {
+    Log::Print("ADMM", "Convergence tolerance {:3.2E} reached, stopping", opts.ε);
+    return true;
+  } else {
+    if (ii == (opts.restart - 1)) {
+      x_k.device(dev) = x̅;
+    } else {
+      x_k.device(dev) = x;
+    }
+    return false;
+  }
 }
 
 void ADMM::zy_update(Index const io, Index const ir, Vector const &Fx) const
 {
-	/*
-    z_i = prox_λ/ρ(F_i * x + u_{i-1})
-    y_i = y + F_i * x - z_i
-	*/
+  /*
+   * z_i = prox_λ/ρ(F_i * x + u_{i-1})
+   * y_i = y + F_i * x - z_i
+   */
 
   // Note that in the Boyd primer relaxation is defined as ɑ * Ax - (1.f - ɑ) * (Bz - c) but this comes from the
   // constraint that Ax + Bz = c Our constraint is Fx = z, which defines A = F and B = -I, and hence the minus sign
   // becomes a plus in this line below, which matches the code examples on Boyd's website
-	auto dev = Threads::CoreDevice();
+  auto   dev = Threads::CoreDevice();
   Vector temp(Fx.size());
 
   // Some ridiculous memory re-use
-	temp.device(dev) = Fx + y[ir]/ρ[ir];
-	regs[ir].P->apply(1.f / ρ[ir], temp);
+  temp.device(dev) = Fx + y[ir] / ρ[ir];
+  regs[ir].P->apply(1.f / ρ[ir], temp);
   z[ir].device(dev) = z[ir] - temp;
   float const q = ParallelNorm(z[ir]);
   z[ir].device(dev) = temp;
 
- 	temp.device(dev) = Fx - z[ir];
- 	float const p = ρ[ir] * ParallelNorm(temp);
+  temp.device(dev) = Fx - z[ir];
+  float const p = ρ[ir] * ParallelNorm(temp);
   y[ir].device(dev) = y[ir] + ρ[ir] * temp;
-  
-  Log::Print("ADMM", "{:<4s} |Fx| {:3.2E} |z| {:3.2E} |y| {:3.2E} ρ {:3.2E} p {:3.2E} q {:3.2E}",
-             regs[ir].P->name, ParallelNorm(Fx), ParallelNorm(z[ir]), ParallelNorm(y[ir]), ρ[ir], p, q);
-  
-	if (io % opts.T == (opts.T - 1)) {
-		float const l = std::numeric_limits<float>::min();
-		if (p < l && q < l) {
-			// Do nothing
-		} else if (p < l) {
-			ρ[ir] /= opts.τ;
-		} else if (q < l) {
-			ρ[ir] *= opts.τ;
-		} else {
-			ρ[ir] = p / q;
-		}
-		Log::Print("ADMM", "New ρ {:3.2E}", ρ[ir]);
-	}
 
-	if (debug_z) { debug_z(io, ir, Fx, z[ir], y[ir]); }
+  Log::Print("ADMM", "{:<4s} |Fx| {:3.2E} |z| {:3.2E} |y| {:3.2E} ρ {:3.2E} p {:3.2E} q {:3.2E}", regs[ir].P->name,
+             ParallelNorm(Fx), ParallelNorm(z[ir]), ParallelNorm(y[ir]), ρ[ir], p, q);
+
+  if (opts.updateρ && io % opts.restart == (opts.restart - 1)) {
+    float const l = std::numeric_limits<float>::min();
+    if (p < l && q < l) {
+      // Do nothing
+    } else if (p < l) {
+      ρ[ir] /= opts.τ;
+    } else if (q < l) {
+      ρ[ir] *= opts.τ;
+    } else {
+      ρ[ir] = p / q;
+    }
+    Log::Print("ADMM", "New ρ {:3.2E}", ρ[ir]);
+  }
+
+  if (debug_z) { debug_z(io, ir, Fx, z[ir], y[ir]); }
 }
 
 auto ADMM::run(Vector const &b) const -> Vector { return run(CMap{b.data(), b.rows()}); }
@@ -119,24 +140,13 @@ auto ADMM::run(CMap b) const -> Vector
 
   bʹ.head(A->rows()).device(dev) = b;
 
-  Vector x(A->cols()), x_k(A->cols());
   x.setZero();
   x_k.setZero();
-
+  x̅.setZero();
   Log::Print("ADMM", "Max its {}/{}/{} Abs ε {}", opts.iters0, opts.iters1, opts.outerLimit, opts.ε);
   Iterating::Starting();
   for (Index io = 0; io < opts.outerLimit; io++) {
-    x_update(io, x_k, x);
-    float const nx = ParallelNorm(x);
-		x_k.device(dev) = x - x_k;
-		float const Δ = ParallelNorm(x_k) / nx;
-    Log::Print("ADMM", "{} |x| {:3.2E} |Δ| {:3.2E}", io, nx, Δ);
-    if (Δ < opts.ε) {
-    	Log::Print("ADMM", "Convergence tolerance {:3.2E} reached, stopping", opts.ε);
-    	break;
-    }
-    
-    x_k.device(dev) = x;
+    if (Iterating::ShouldStop("ADMM") || x_update(io)) { break; }
     for (Index ir = 0; ir < regs.size(); ir++) {
       if (regs[ir].T) {
         Vector Fx(z[ir].size());
@@ -146,7 +156,6 @@ auto ADMM::run(CMap b) const -> Vector
         zy_update(io, ir, x);
       }
     }
-    if (Iterating::ShouldStop("ADMM")) { break; }
   }
   Iterating::Finished();
   return x;
