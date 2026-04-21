@@ -44,7 +44,7 @@ private:
   DebugZ                   debug_z = nullptr;
   Op::Ptr                  Aʹ, Minvʹ;
 
-  Vector mutable x, x_k, x̅, bʹ;
+  Vector mutable x, x_k, bʹ;
   std::vector<float> mutable ρ;
   std::vector<Ops::DiagScale::Ptr> mutable ρops;
   std::vector<Vector> mutable z, y;

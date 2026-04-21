@@ -26,7 +26,6 @@ ADMM::ADMM(Op::Ptr AA, Op::Ptr MMinv, std::vector<Regularizer> const &r, Opts o,
 
   x.resize(A->cols());
   x_k.resize(A->cols());
-  x̅.resize(A->cols());
   for (Index ir = 0; ir < R; ir++) {
     Index const sz = regs[ir].T ? regs[ir].T->rows() : A->cols();
     z[ir].resize(sz);
@@ -68,21 +67,16 @@ auto ADMM::x_update(Index const io) const -> bool
   }
   x = lsmr.run(bʹ, x_k);
   Index const ii = io % opts.restart;
-  x_k.device(dev) = (x - x̅) / (ii + 2); /* Running average formula. Re-use space to store delta */
+  x_k.device(dev) = (x - x_k); /* Running average formula. Re-use space to store delta */
   float const nΔ = ParallelNorm(x_k);
-  x̅.device(dev) = x̅ + x_k;
-  float const nx = ParallelNorm(x̅);
-  if (debug_x) { debug_x(io, x̅); }
+  float const nx = ParallelNorm(x);
+  if (debug_x) { debug_x(io, x); }
   Log::Print("ADMM", "{} |Δ| {:3.2E} |x| {:3.2E} |Δ|/|x| {:3.2E}", io, nΔ, nx, nΔ / nx);
   if ((nΔ / nx) < opts.ε) {
     Log::Print("ADMM", "Convergence tolerance {:3.2E} reached, stopping", opts.ε);
     return true;
   } else {
-    if (ii == (opts.restart - 1)) {
-      x_k.device(dev) = x̅;
-    } else {
-      x_k.device(dev) = x;
-    }
+    x_k.device(dev) = x;
     return false;
   }
 }
@@ -142,7 +136,6 @@ auto ADMM::run(CMap b) const -> Vector
 
   x.setZero();
   x_k.setZero();
-  x̅.setZero();
   Log::Print("ADMM", "Max its {}/{}/{} Abs ε {}", opts.iters0, opts.iters1, opts.outerLimit, opts.ε);
   Iterating::Starting();
   for (Index io = 0; io < opts.outerLimit; io++) {

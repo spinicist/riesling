@@ -48,37 +48,20 @@ void main_denoise(args::Subparser &parser)
   auto [regs, A, ext_x] = Regularizers(regOpts, E);
   VectorX x(A->cols());
   if (pdhg) {
-    PDHG::Debug debug = [shape = E->ishape](Index const ii, PDHG::Vector const &x, PDHG::Vector const &x̅) {
+    PDHG::Debug debug = [shape = E->ishape](Index const ii, PDHG::Vector const &dx, PDHG::Vector const &x̅) {
       if (Log::IsDebugging()) {
-	      Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+	      Log::Tensor(fmt::format("pdhg-x-{:02d}", ii), shape, dx.data(), HD5::Dims::Images);
 	      Log::Tensor(fmt::format("pdhg-xbar-{:02d}", ii), shape, x̅.data(), HD5::Dims::Images);
       }
     };
     x = PDHG::Run(CollapseToConstVector(in), A, nullptr, regs, pdhgArgs.Get(), debug);
   } else {
-    ADMM::DebugX debug_x = [shape=E->ishape, di = debugIters.Get(), ext_x](Index const ii, ADMM::Vector const &x) {
+    ADMM::DebugX debug_x = [shape=E->ishape, di = debugIters.Get(), ext_x](Index const ii, ADMM::Vector const &dx) {
       if (Log::IsDebugging() && (ii % di == 0)) {
-	   		Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, x.data(), HD5::Dims::Images);
+	   		Log::Tensor(fmt::format("admm-x-{:02d}", ii), shape, dx.data(), HD5::Dims::Images);
       }
     };
-    ADMM::DebugZ debug_z = [&, di = debugIters.Get()](Index const ii, Index const ir, ADMM::Vector const &Fx,
-                                                      ADMM::Vector const &z, ADMM::Vector const &u) {
-      if (Log::IsDebugging() && (ii % di == 0)) {
-        if (std::holds_alternative<Sz5>(regs[ir].shape)) {
-          auto const Fshape = std::get<Sz5>(regs[ir].shape);
-          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), HD5::Dims::Images);
-          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), HD5::Dims::Images);
-          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), HD5::Dims::Images);
-        }
-        if (std::holds_alternative<Sz6>(regs[ir].shape)) {
-          auto const Fshape = std::get<Sz6>(regs[ir].shape);
-          Log::Tensor(fmt::format("admm-Fx-{:02d}-{:02d}", ir, ii), Fshape, Fx.data(), {"i", "j", "k", "b",  "t", "g"});
-          Log::Tensor(fmt::format("admm-z-{:02d}-{:02d}", ir, ii), Fshape, z.data(), {"i", "j", "k", "b", "t", "g"});
-          Log::Tensor(fmt::format("admm-u-{:02d}-{:02d}", ir, ii), Fshape, u.data(), {"i", "j", "k", "b", "t", "g"});
-        }
-      }
-    };
-    ADMM opt{A, nullptr, regs, admmArgs.Get(), debug_x, debug_z};
+    ADMM opt{A, nullptr, regs, admmArgs.Get(), debug_x, nullptr};
    	x = opt.run(CollapseToConstVector(in));
   }
 
